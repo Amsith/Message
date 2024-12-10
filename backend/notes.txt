@@ -1,0 +1,50 @@
+npm init -y
+npm install typescript --save-dev
+npx tsc --init
+npm install --save-dev @types/node @types/express
+
+ 
+// ts-node is required to run TypeScript files directly without compiling them. 
+// Install it as a development dependency:
+
+npm install ts-node --save-dev
+
+
+
+
+//== return
+
+
+// = ESlint Setup backend
+npm install eslint --save-dev
+npx eslint --init
+
+
+// check the error in terminal 
+npx eslint . --ext .js,.jsx,.ts,.tsx
+
+"scripts": {
+  "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
+}
+
+npm run lint
+
+/// NPM for OAuth
+npm install passport passport-google-oauth20 express-session dotenv
+
+
+// TODO  // 
+refresh token 
+es Lint 
+Protect the routes - user cant access the admin components
+Socket.Io implementation.
+
+
+// DONE //
+Front end Design, Register and Login Page.
+set token in cookies
+Logout function
+ratelimiting
+
+
+
