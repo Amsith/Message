@@ -1,8 +1,9 @@
 import axios from 'axios';
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import Spinner from 'react-bootstrap/Spinner';
+import { useSelector } from 'react-redux';
 
 
 
@@ -14,7 +15,7 @@ const Register = () => {
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState('')
 
-
+    const isAuthenticate = useSelector((state: any) => state.user.isAuthenticated)
 
     const registerFunction = async (e: any) => {
         e.preventDefault()
@@ -43,7 +44,12 @@ const Register = () => {
             }, 5000);
         }
     }
-
+    
+    useEffect(() => {
+        if (isAuthenticate) {
+            navigate('/das');
+        }
+    }, [isAuthenticate, navigate]);
 
 
     return (

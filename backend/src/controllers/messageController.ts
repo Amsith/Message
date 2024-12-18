@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { Router } from 'express';
 import { Db, ObjectId } from "mongodb";
 import messageModel from '../models/messageModel';
-import passport from 'passport';
+import userModel from '../models/registerModel';
 
 interface Context {
     db: Db;
@@ -12,21 +12,32 @@ interface Context {
 const sendMessage = (context: Context) => {
     const router = Router();
 
-    router.post('/', async (req: Request, res: Response) => {
+    router.post('/:id', async (req: Request, res: Response) => {
         try {
 
+            const { id: receiverID } = req.params;
+
             // console.log('Request user:', req.user); // Check the structure of req.user
-            const userID = (req.user as unknown as { _id: string })._id;
-            console.log('Extracted userID:', userID);
+            const senderID = (req.user as unknown as { _id: string })._id;
+            console.log('Extracted userID:', senderID);
 
 
             const { message } = req.body;
-
-            // Save message to database
-            const newMessage = await new messageModel({
-                userID: userID,  // Use the correct field name
-                message,
+            // Validate inputs
+            if (!message || !receiverID) {
+                res.status(400).json({
+                    success: false,
+                    message: "Message and receiver ID are required",
+                });
+                return
+            }
+            // Save the message to the database
+            const newMessage = new messageModel({
+                senderID,       // Sender's ID
+                receiverID,     // Receiver's ID
+                message,        // The message content
             });
+
             await newMessage.save();
             res.status(201).json({
                 success: true,
@@ -50,37 +61,44 @@ const sendMessage = (context: Context) => {
 const receiveMessage = (context: Context) => {
     const router = Router();
 
-    router.get('/', async (req: Request, res: Response) => {
+    router.get('/:id', async (req: Request, res: Response) => {
         try {
-
             const user = req.user as { _id: string | ObjectId; userRole: string } | undefined;
-
             if (!user) {
                 res.status(401).json({ message: "Unauthorized access" });
-                return;
+                return
             }
-            let messages;
 
+            const { id } = req.params; // The ID of the user the logged-in user is chatting with
+            const loggedInUserId = new ObjectId(user._id);
+            const paramsUser = await userModel.findOne({ _id: id })
+            let messages;
             if (user.userRole === 'admin' || user.userRole === 'supadmin') {
                 // Retrieve all messages
-                messages = await messageModel.find()
+                messages = await messageModel.find().sort({ createdAt: 1 }); // Sort by timestamp
             } else if (user.userRole === 'user') {
-                // Retrieve only messages related to the logged-in user
-                // Ensure that the user.id is converted to ObjectId if it's a string
-                const userId = new ObjectId(user._id);
-                messages = await messageModel.find({ userID: userId });
+                // Retrieve messages between the logged-in user and the target user
+                const chatWithObjectId = new ObjectId(id);
+
+                messages = await messageModel.find({
+                    $or: [
+                        { senderID: loggedInUserId, receiverID: chatWithObjectId },
+                        { senderID: chatWithObjectId, receiverID: loggedInUserId },
+                    ],
+                }).sort({ createdAt: 1 }); // Sort messages by timestamp (ascending)
             } else {
                 res.status(403).json({
                     message: "You do not have permission to access this resource",
                 });
-                return;
+                return
             }
 
-            // Ensure that the response is formatted properly
+            // Return messages
             res.status(200).json({
                 message: "Messages retrieved successfully",
-                totalMessage: messages.length,
-                messages, // Ensure this is an array of messages
+                totalMessages: messages.length,
+                messages,
+                paramsUser
             });
         } catch (error) {
             console.error("Error retrieving messages:", error);

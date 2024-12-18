@@ -1,6 +1,8 @@
 import axios from 'axios';
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux';
+import { Link, useNavigate, } from 'react-router-dom';
+import { setError, setUser } from '../store/userSlice';
 
 
 
@@ -10,22 +12,32 @@ const Login = () => {
     const [password, setPassword] = useState('')
     const [message, setMessage] = useState('')
 
+    const dispatch = useDispatch();
+
+    // to check the user is login or not
+    const isAuthenticated = useSelector((state: any) => state.user.isAuthenticated)
+
+
+    // login Function
     const LoginFunction = async (e: any) => {
         e.preventDefault()
         try {
-
             const response = await axios.post('http://localhost:5001/api/login', {
                 email, password
             }, { withCredentials: true })
 
-            const role = response.data.role
 
-            //st the token in the headers
-            if (role === 'amdin' || role === 'supadmin') {
-                navigate('/admin')
+
+
+
+            const userData = response?.data.user;
+            dispatch(setUser(userData));
+
+            const user = response.data.user;
+            if (user.userRole === 'admin') {
+              navigate('/admin'); // Navigate to admin page if user is an admin
             } else {
-                navigate('/home')
-
+              navigate('/das'); // Navigate to home page if user is not an admin
             }
 
         } catch (error: any) {
@@ -34,14 +46,23 @@ const Login = () => {
             if (error.response && error.response.data && error.response.data.message) {
                 setMessage(error.response.data.message); // Set the server error message
             } else {
-                setMessage('An unexpected error occurred. Please try again.'); // Fallback message
+                setMessage('An unexpected error occurred. Please try again / Check the serveside'); // Fallback message
             }
             setTimeout(() => {
                 setMessage('');
             }, 5000);
+
+            dispatch(setError(error?.response?.data?.message));
             console.log(error);
         }
     }
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/das/')
+        }
+    }, [isAuthenticated, navigate])
+
 
 
     return (

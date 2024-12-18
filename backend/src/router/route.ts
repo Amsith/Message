@@ -5,6 +5,8 @@ import messageController from "../controllers/messageController";
 import adminCreateUser from "../controllers/adminCreateUser";
 import loginController from "../controllers/loginController";
 import rateLimit from "express-rate-limit";
+import getLoginUser from "../controllers/getUser";
+import getUser from "../controllers/getUser";
 
 
 
@@ -47,8 +49,13 @@ const createRouter = (context: any) => {
     // Login POST
     router.use('/login', loginRateLimiter, loginController.login(context));
     // Logout function
-    router.use('/logout',isAuthenticate.isAuthenticate(context) ,loginController.logOut(context));
+    router.use('/logout', isAuthenticate.isAuthenticate(context), loginController.logOut(context));
 
+    //== Get All User
+    router.use('/all/user', isAuthenticate.isAuthenticate(context),isAuthenticate.authorizeRole('user', 'admin', 'supadmin'), getUser.getAllUser(context));
+
+    //== Get Login User
+    router.use('/logedin/user', isAuthenticate.isAuthenticate(context),isAuthenticate.authorizeRole('user', 'admin', 'supadmin'), getUser.getLoginUser(context));
 
     // post message
     router.use('/message', isAuthenticate.isAuthenticate(context), isAuthenticate.authorizeRole('user', 'admin', 'supadmin'), messageController.sendMessage(context)); // Fix invocation

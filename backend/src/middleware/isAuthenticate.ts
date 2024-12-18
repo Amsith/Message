@@ -43,7 +43,7 @@ const isAuthenticate = (context: Context) => {
             }
 
             // If no googleUser or token, send a 403 response
-            res.status(403).json({ message: "Please Login to access" });
+            res.status(403).json({ message: "Please login to access" });
 
         } catch (error) {
             console.error(error);
@@ -68,7 +68,7 @@ const authorizeRole = (...roles: string[]) => {
     return (req: Request, res: Response, next: NextFunction): void => {
         try {
             // Log the user's role for debugging (optional)
-            console.log("User Role", req.user?.userRole);
+            // console.log("User Role", req.user?.userRole);
 
             // Check if req.user exists and has a role property
             if (!req.user || !req.user.userRole) {

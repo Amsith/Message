@@ -44,16 +44,18 @@ const login = (context: any) => {
                 res.status(403).json({ message: "Please verify your email before logging in." });
                 return
             }
-            // Check if the user is already logged in from another IP
-            if (existingUser.currentIp !== userIp) {
+             // Check if the user is already logged in from another IP
+            if (existingUser.currentIp === null) {
+                // Update the user's current IP in the database
+                existingUser.currentIp = userIp as string;
+                await existingUser.save();
+            } else if (existingUser.currentIp !== userIp) {
                 res.status(403).json({
                     message: `You are already logged in from IP address: ${existingUser.currentIp}`,
                 });
                 return;
             }
-            // Update the user's current IP in the database
-            existingUser.currentIp = userIp as string;
-            await existingUser.save();
+
 
             // Generate Token
             const token = jwt.sign(
@@ -71,7 +73,7 @@ const login = (context: any) => {
                 expires: new Date(Date.now() + 86400000), // 1 day
                 httpOnly: true,
             };
-
+            // expires: new Date(Date.now() + 86400000),
             // Send response with token and user details
             res.status(200).cookie('token', token, options).json({
                 success: true,
@@ -79,6 +81,7 @@ const login = (context: any) => {
                 token,
                 name: existingUser.username,
                 role: existingUser.userRole,
+                user : existingUser
             });
         } catch (error) {
             console.error("Login error:", error);
@@ -97,18 +100,18 @@ const logOut = (context: any) => {
         try {
 
             const userID = (req.user as unknown as { _id: string })._id;
-            console.log("logout User idL",userID )
+            console.log("logout User idL", userID)
             if (!userID) {
-                 res.status(400).json({ message: "User ID is required for logout" });
-                 return
-                }
+                res.status(400).json({ message: "User ID is required for logout" });
+                return
+            }
 
 
             // Clear the IP address associated with the user
             const user = await userModel.findById(userID);
             if (!user) {
-                 res.status(404).json({ message: "User not found" });
-                 return
+                res.status(404).json({ message: "User not found" });
+                return
             }
 
             // Update the user's current IP in the database
@@ -121,7 +124,7 @@ const logOut = (context: any) => {
             // If you're using session cookies
             res.clearCookie('connect.sid', { httpOnly: true, sameSite: 'strict' });
             // Find the user and clear their IP
-           
+
             // Clear the cookie
             res.status(200).json({
                 success: true,

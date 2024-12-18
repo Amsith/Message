@@ -1,11 +1,10 @@
-import { Request, response, Response, Router } from 'express';
+import { Request, Response, Router } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Db } from 'mongodb';
 import configs from '../configs/config';
 import sendVerificationEmail from '../middleware/sendMail';
 import validator from 'validator'
-import { error } from 'console';
 import userModel from '../models/registerModel';
 
 interface Context {
@@ -15,7 +14,6 @@ interface Context {
 
 
 const registerController = (context: Context) => {
-    const { db } = context;
     const router = Router();
 
     router.post('/', async (req: Request, res: Response) => {
@@ -37,14 +35,13 @@ const registerController = (context: Context) => {
                 res.status(400).json({ success: false, message: "Invalid email format" })
                 return
             }
-
             // Check if the email already exists
             const existingUser = await userModel.findOne({ email });
             if (existingUser) {
                 if (existingUser.googleId) {
                     res.status(400).json({
                         success: false,
-                        message: "This email is associated with a Google account. Please log in with Google.", 
+                        message: "This email is associated with a Google account. Please log in with Google.",
                     });
                 } else {
                     res.status(400).json({
@@ -61,12 +58,13 @@ const registerController = (context: Context) => {
 
 
             // Create a new user document
-            const newUser = new userModel({
+            const newUser = await new userModel({
                 username,
                 email,
                 password: hashedPassword,
                 isVerified: false,
-                userRole: "user", // Default role
+                userRole: "user",// Default role
+                currentIp:null,
             });
 
             // Save the user to the database
